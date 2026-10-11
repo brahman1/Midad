@@ -1,0 +1,12 @@
+{
+  "url": "https://midad-test-brahman1.onrender.com",
+  "date": "2026-10-11T13:18:02.163Z",
+  "commit": "aeff6f6",
+  "result": "OK",
+  "checks": [
+    "OWNER: série et aperçu avec mois fermé, date et période exclus vérifiés",
+    "TEACHER: série et aperçu avec mois fermé, date et période exclus vérifiés",
+    "Famille : fermetures consultables, gestion des séries refusée"
+  ],
+  "mutationOfPlanning": false
+}

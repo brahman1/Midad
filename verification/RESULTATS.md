@@ -50,3 +50,5 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - Builds shared/API/web et contrôles TypeScript des quatre workspaces réussis.
 - Navigateur : aperçu français vérifié (quatre séances en novembre, décembre et le 15 novembre exclus), disposition arabe à 390 × 844 pixels, aucune largeur de page excessive. Capture `recurrence-mobile-ar.png`.
 - Interface de création dans le web responsive ; aucune nouvelle compilation des applications natives pour cette fonction.
+- Création réelle de quatre séances depuis le formulaire local, puis arrêt confirmé de la série : quatre séances conservées, zéro séance à venir.
+- Déploiement Render gratuit réussi en 1 min 58 s, commit applicatif `aeff6f6`. Migration et nouveaux endpoints vérifiés par HTTPS pour direction, professeur et parent ; aperçu en ligne conforme à l'exemple. Rapport `render-recurrence-smoke.json`, capture `render-recurrence.png`. Aucun cours ni fermeture ajouté sur Render pendant cette vérification.
