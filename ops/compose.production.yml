@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: midad
+      POSTGRES_DB: midad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes: [db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U midad]
+      interval: 5s
+      retries: 15
+    networks: [private]
+  api:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://midad:${POSTGRES_PASSWORD}@db:5432/midad
+      NODE_ENV: production
+      WEB_URL: https://${DOMAIN:?Configure DOMAIN}
+      ALLOWED_ORIGINS: https://${DOMAIN}
+      SMTP_HOST: ${SMTP_HOST:?Configure SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM:?Configure SMTP_FROM}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:?Configure CONTACT_EMAIL}
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [private, outgoing]
+  web:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      api: {condition: service_healthy}
+    networks: [private]
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment: {DOMAIN: '${DOMAIN}', TLS_EMAIL: '${TLS_EMAIL:?Configure TLS_EMAIL}'}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes: ['./Caddyfile:/etc/caddy/Caddyfile:ro', 'caddy-data:/data', 'caddy-config:/config']
+    depends_on: [web, api]
+    networks: [private, outgoing]
+  backup:
+    image: postgres:17-alpine
+    profiles: [backup]
+    environment: {PGPASSWORD: '${POSTGRES_PASSWORD}', PGHOST: db, PGUSER: midad, PGDATABASE: midad}
+    volumes: ['./backup.sh:/backup.sh:ro', './backups:/backups']
+    entrypoint: [sh, /backup.sh]
+    networks: [private]
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:
+networks:
+  private: {internal: true}
+  outgoing:

@@ -1,0 +1,33 @@
+# Validation du 10 octobre 2026
+
+- API NestJS et web Next.js compilés ; images Docker lancées et santé API positive.
+- TypeScript validé pour shared, api, web et mobile.
+- Tests Node/PostgreSQL/Mailpit : 18 réussites, 0 échec, 0 ignoré, environ 7 secondes sur les images Docker. Les 17 scénarios couvrent email, rôles, capacité, planning, présence, factures, paiements, remboursements, paie et concurrence, documents, annonces, isolation, caisse, export et révocation.
+- Dump PostgreSQL restauré dans une base neuve. Décomptes identiques tenants/élèves/paiements/séances/documents : 10 / 15 / 18 / 13 / 5. La base de contrôle et le dump temporaire ont ensuite été retirés. Données fictives uniquement.
+- Audit npm de production api/web : 0 vulnérabilité signalée. Avis ouverts de la chaîne Expo décrits dans DELIVERY.md.
+- Bundles Expo Android, iOS et web générés. APK Android natif recompilé avec succès : 602 tâches Gradle, environ 2 minutes 11 secondes pour le dernier passage.
+- Expo Doctor : 21 contrôles réussis sur le projet CNG avant régénération du dossier Android de compilation. Les sources livrées excluent ce dossier généré.
+- Web inspecté dans le navigateur : création réelle d'un dossier fictif, tableau de bord et présentation arabe à largeur téléphone.
+- Aperçu web React Native avec parent fictif : son enfant, groupe, solde et planning. Les essais sur appareils natifs restent à réaliser.
+
+Ces résultats locaux ne constituent pas un engagement de capacité ni un audit indépendant. Les captures contiennent uniquement les données de test.
+
+## Refonte et validation du 11 octobre 2026
+
+- Tableau de bord API enrichi avec des données calculées et limitées par établissement, rôle et enfant lié : présences, encaissements, échéances, groupes et élèves récents.
+- Tests d'intégration : 18 réussites, zéro échec ; assertions ajoutées pour ces nouvelles données et les accès famille/enseignant/autre établissement.
+- TypeScript validé sur les quatre workspaces ; build Next.js et exports Expo Android/iOS/web réussis.
+- Démonstration enrichie : 77 élèves, 10 groupes, 6 enseignants, factures, paiements, présences et séances fictifs. Deux exécutions de l'enrichissement, décomptes stables.
+- Aperçu React Native web inspecté sur ordinateur et à 390 × 844 pixels en français et arabe ; montants complets et disposition de droite à gauche vérifiés. Captures : `refonte-ordinateur.jpg`, `refonte-telephone.jpg`, `refonte-arabe-telephone.jpg`.
+- APK Android local recompilé avec succès après la dernière correction d'affichage : 602 tâches Gradle, 45 secondes. Aucun essai sur appareil natif ajouté à cette validation.
+- API, site Next.js et aperçu mobile relancés localement. Sources et APK mis à jour ; archive et empreintes régénérées.
+
+## Calendrier web interactif — 11 octobre 2026
+
+- Grilles jour/semaine/mois et agenda en liste ; couleurs et légende par groupe, filtres, recherche et navigation entre périodes.
+- Détail d'une séance et accès à sa feuille de présence inspectés ; création depuis un créneau avec début et fin préremplis vérifiée sans enregistrer de séance supplémentaire.
+- Vue mensuelle : 87 séances fictives en octobre ; passage à novembre sans séances vérifié. Filtre Samir Benali : 13 séances dans la semaine du 11 au 17 octobre.
+- Vue jour inspectée à 390 × 844 pixels en français/arabe ; largeur de page sans débordement. Horaires numériques conservés dans le sens de lecture de gauche à droite en arabe.
+- API : dates bornées à 62 jours, rejet des dates invalides et périodes inversées, historique/futur et isolation entre établissements vérifiés.
+- 22 tests réussis (18 existants avec assertions API ajoutées, 4 sur dates, mois, cours simultanés et séances traversant minuit). Builds API/shared/web réussis.
+- Captures du calendrier dans ce dossier ; archive des sources actualisée. Pas de modification du planning natif dans cette livraison.

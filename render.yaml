@@ -1,0 +1,38 @@
+# Instance de test uniquement : aucun plan payant.
+services:
+  - type: web
+    name: midad-test-brahman1
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci --include=dev --workspace api --workspace web --workspace shared && npm run build
+    startCommand: node scripts/serve-render.mjs
+    healthCheckPath: /api/public/health
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
+      - key: API_INTERNAL_URL
+        value: http://127.0.0.1:4100
+      - key: DATABASE_URL
+        fromDatabase:
+          name: midad-test-db
+          property: connectionString
+      - key: MIDAD_DEMO_ENABLED
+        value: "true"
+      - key: MIDAD_DEMO_PASSWORD
+        sync: false
+databases:
+  - name: midad-test-db
+    plan: free
+    region: frankfurt
+    databaseName: midad
+    user: midad
+    postgresMajorVersion: "17"
+    ipAllowList: []

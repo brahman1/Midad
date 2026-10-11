@@ -1,0 +1,31 @@
+name: Validation Midad
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci
+      - run: npm run check
+      - run: npm run format:check
+      - run: npm run build
+      - run: npm run export -w mobile
+      - run: npx expo-doctor mobile
+      - run: npm audit --workspace api --workspace web --omit=dev
+      - run: cp .env.example .env
+      - run: docker compose -p midad -f ops/compose.local.yml up -d --wait
+      - name: API et tests métier
+        run: |
+          npm run start:api > /tmp/midad-api.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4100/api/public/health; then break; fi
+            sleep 1
+          done
+          npm test
+      - if: failure()
+        run: cat /tmp/midad-api.log || true
+      - if: always()
+        run: docker compose -p midad -f ops/compose.local.yml down

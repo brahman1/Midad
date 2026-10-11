@@ -1,0 +1,24 @@
+services:
+  api:
+    image: midad-api:local
+    environment:
+      DATABASE_URL: postgres://midad:midad_local_only@db:5432/midad
+      NODE_ENV: development
+      WEB_URL: http://127.0.0.1:3006
+      ALLOWED_ORIGINS: http://127.0.0.1:3006
+      SMTP_HOST: mail
+      SMTP_PORT: 1025
+      SMTP_FROM: Midad <contact@localhost>
+    ports: ['127.0.0.1:4106:4100']
+    networks:
+      local: {aliases: [api]}
+  web:
+    image: midad-web:local
+    ports: ['127.0.0.1:3006:3000']
+    networks: [local]
+    depends_on:
+      api: {condition: service_healthy}
+networks:
+  local:
+    external: true
+    name: midad_default
