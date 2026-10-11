@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import Overview from "./overview";
 import PlanningCalendar from "./calendar";
+import RecurringPlanning from "./recurrence";
 import "./workspace.css";
 import {
   LayoutDashboard,
@@ -140,6 +141,7 @@ export default function Workspace() {
     [cash, setCash] = useState<Row | null>(null),
     [month, setMonth] = useState(today().slice(0, 7));
   const request = useRef(0);
+  const [schoolClosures, setSchoolClosures] = useState<Row[]>([]);
   const [sessionRange, setSessionRange] = useState(() => {
     const days = calendarWeek(today());
     return { from: days[0], to: shiftDay(days[6], 1) };
@@ -186,6 +188,10 @@ export default function Workspace() {
       if (page === "dashboard") setDashboard(data);
       else if (page === "settings") setSettings(data);
       else setRows(data);
+      if (page === "sessions") {
+        const closures = await api("planning/closures");
+        if (seq === request.current) setSchoolClosures(closures);
+      }
       if (page === "payments" && finance) setCash(await api("cash"));
       if (admin || finance || teach || page === "sessions") {
         const [students, groups, users] = await Promise.all([
@@ -1275,19 +1281,31 @@ export default function Workspace() {
                   ),
                 )}
               {page === "sessions" && (
-                <PlanningCalendar
-                  rows={rows.filter((r) => r.starts_at && r.ends_at)}
-                  groups={lookup.groups}
-                  lang={lang}
-                  canEdit={teach}
-                  busy={busy || loading}
-                  onCreate={sessionForm}
-                  onEdit={sessionForm}
-                  onStatus={sessionStatus}
-                  onAttendance={(r) => void attendance(r)}
-                  onRefresh={() => void load()}
-                  onRangeChange={calendarRange}
-                />
+                <>
+                  {teach && (
+                    <RecurringPlanning
+                      groups={lookup.groups}
+                      closures={schoolClosures}
+                      admin={admin}
+                      lang={lang}
+                      onChanged={() => void load()}
+                    />
+                  )}
+                  <PlanningCalendar
+                    closures={schoolClosures}
+                    rows={rows.filter((r) => r.starts_at && r.ends_at)}
+                    groups={lookup.groups}
+                    lang={lang}
+                    canEdit={teach}
+                    busy={busy || loading}
+                    onCreate={sessionForm}
+                    onEdit={sessionForm}
+                    onStatus={sessionStatus}
+                    onAttendance={(r) => void attendance(r)}
+                    onRefresh={() => void load()}
+                    onRangeChange={calendarRange}
+                  />
+                </>
               )}
               {page === "invoices" &&
                 table(

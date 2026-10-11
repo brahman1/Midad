@@ -41,3 +41,12 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - Dix vérifications HTTPS, dont les six rôles : cookies sécurisés, refus anonyme/origine étrangère/ancien mot de passe, portée des élèves/séances et révocation après déconnexion. Rapport `render-smoke.json` sans mot de passe ni jeton.
 - 76 élèves fictifs, 10 groupes, 6 enseignants ; 53 séances du 11 au 17 octobre. Captures `render-calendrier.png` et `render-free-service.png`.
 - Base gratuite expirant le 10 novembre 2026. Emails cloud non configurés ; aucune publication mobile sur les stores ajoutée à cette validation.
+
+## Cours récurrents et fermetures — 11 octobre 2026
+
+- Moteur partagé : répétitions, semaines alternées, mois et dates exclus, pauses et fermetures inclusives, cours traversant minuit et rejet des dates invalides. Horaires d'Alger.
+- Migration 004 appliquée localement : fermetures, séries et liaison aux séances ; export administratif enrichi.
+- 30 tests réussis, zéro échec : PostgreSQL réel, création simultanée sans doublon, conflits, fermeture avec annulation explicite, protection des ajouts individuels, arrêt idempotent, droits professeur/famille et isolation entre établissements.
+- Builds shared/API/web et contrôles TypeScript des quatre workspaces réussis.
+- Navigateur : aperçu français vérifié (quatre séances en novembre, décembre et le 15 novembre exclus), disposition arabe à 390 × 844 pixels, aucune largeur de page excessive. Capture `recurrence-mobile-ar.png`.
+- Interface de création dans le web responsive ; aucune nouvelle compilation des applications natives pour cette fonction.

@@ -11,6 +11,7 @@ Stack retenue : TypeScript, Next.js, NestJS, PostgreSQL et Expo/React Native. Le
 - Élèves et familles, groupes, enseignants, inscriptions et capacité des groupes.
 - Séances, conflits d'horaires, salles, présences, retards, absences et justificatifs.
 - Calendrier web interactif : vues jour, semaine, mois et liste, couleurs par groupe, filtres, fiche détaillée et création depuis un créneau libre. Semaine du dimanche au samedi, horaires d'Alger et cours simultanés affichés côte à côte.
+- Programmation des cours récurrents en une fois : jours de semaine, horaire, durée, semaines alternées, mois exclus et pauses. Fermetures de l'école partagées, aperçu des dates et conflits, arrêt des séances futures d'une série. Voir **PLANNING.md**.
 - Factures ponctuelles ou mensuelles, versements partiels, remboursements, reçus, ouverture et clôture de caisse avec écart.
 - Rémunérations à l'heure, à la séance ou au pourcentage des encaissements nets, historique des tarifs et règlements protégés contre les doublons.
 - Annonces ciblées, notifications, documents protégés, journal administratif et export des données.
@@ -36,4 +37,4 @@ Les paramètres avancés et l'export complet passent par le web ; le mobile prop
 
 Lire **GUIDE-LANCEMENT.md**, **ACCES-LOCAL.md** et **DELIVERY.md**. L'archive des sources exclut les caches, secrets, bases et projets natifs générés. L'APK est fourni séparément.
 
-Les builds web/API, les tests d'intégration et les bundles Android/iOS ont été exécutés. Aucun serveur public ni publication Apple/Google n'a été créé. La compilation native iOS et les essais sur appareils réels restent à effectuer.
+Les builds web/API, les tests d'intégration et les bundles Android/iOS ont été exécutés. Une version de test est hébergée sur Render gratuit : https://midad-test-brahman1.onrender.com (conditions et limites dans RENDER.md). Aucune publication Apple/Google n'a été effectuée. La compilation native iOS et les essais sur appareils réels restent à effectuer.

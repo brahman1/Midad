@@ -299,6 +299,192 @@ test("Parcours métier réel, droits et isolation PostgreSQL", async (t) => {
     },
   );
   await t.test(
+    "Récurrence, vacances, conflits, fermeture et concurrence sans doublon",
+    async () => {
+      const closure = (
+        await call("planning/closures", {
+          token: owner,
+          method: "POST",
+          body: {
+            label: "Vacances de janvier",
+            from: "2030-01-13",
+            to: "2030-01-19",
+          },
+        })
+      ).id;
+      const rule = {
+        group_id: groupId,
+        from: "2030-01-01",
+        to: "2030-03-31",
+        weekdays: [0],
+        start_time: "09:00",
+        duration_minutes: 60,
+        excluded_months: [2],
+        excluded_dates: ["2030-01-20"],
+        excluded_periods: [
+          { label: "Pause de mars", from: "2030-03-10", to: "2030-03-16" },
+        ],
+      };
+      await call("planning/preview", {
+        token: parent.token,
+        method: "POST",
+        body: rule,
+        expected: 403,
+      });
+      await call("planning/closures", {
+        token: teacher.token,
+        method: "POST",
+        body: { label: "Interdit", from: "2030-01-01", to: "2030-01-01" },
+        expected: 403,
+      });
+      const preview = await call("planning/preview", {
+        token: teacher.token,
+        method: "POST",
+        body: rule,
+      });
+      assert.equal(preview.accepted.length, 6);
+      assert.equal(preview.excluded.length, 7);
+      const request_id = randomUUID();
+      const [one, two] = await Promise.all([
+        call("planning/series", {
+          token: teacher.token,
+          method: "POST",
+          body: { ...rule, request_id },
+        }),
+        call("planning/series", {
+          token: teacher.token,
+          method: "POST",
+          body: { ...rule, request_id },
+        }),
+      ]);
+      assert.equal(one.id, two.id);
+      assert.equal(one.created, 6);
+      assert.equal(two.created, 6);
+      const ls = await call("sessions?from=2030-01-01&to=2030-02-01", {
+        token: owner,
+      });
+      assert.equal(ls.filter((l) => l.series_id === one.id).length, 2);
+      await call("planning/series", {
+        token: owner,
+        method: "POST",
+        body: { ...rule, request_id: randomUUID() },
+        expected: 409,
+      });
+      await call("planning/series", {
+        token: owner,
+        method: "POST",
+        body: { ...rule, start_time: "10:00", request_id },
+        expected: 409,
+      });
+      const newRule = { ...rule, to: "2030-04-07", skip_conflicts: true };
+      const mixed = await call("planning/preview", {
+        token: owner,
+        method: "POST",
+        body: newRule,
+      });
+      assert.equal(mixed.conflicts.length, 6);
+      assert.equal(mixed.accepted.length, 1);
+      const more = await call("planning/series", {
+        token: owner,
+        method: "POST",
+        body: { ...newRule, request_id: randomUUID() },
+      });
+      assert.equal(more.created, 1);
+      await call("sessions", {
+        token: owner,
+        method: "POST",
+        body: {
+          group_id: groupId,
+          starts_at: "2030-01-13T12:00:00+01:00",
+          ends_at: "2030-01-13T13:00:00+01:00",
+        },
+        expected: 409,
+      });
+      const maintenance = {
+        label: "Travaux",
+        from: "2030-03-03",
+        to: "2030-03-03",
+      };
+      assert.equal(
+        (
+          await call("planning/closures/preview", {
+            token: owner,
+            method: "POST",
+            body: maintenance,
+          })
+        ).affected.length,
+        1,
+      );
+      await call("planning/closures", {
+        token: owner,
+        method: "POST",
+        body: maintenance,
+        expected: 409,
+      });
+      const saved = await call("planning/closures", {
+        token: owner,
+        method: "POST",
+        body: { ...maintenance, cancel_sessions: true },
+      });
+      assert.equal(saved.cancelled, 1);
+      const cancelled = (
+        await call("sessions?from=2030-03-03&to=2030-03-04", { token: owner })
+      )[0];
+      assert.equal(cancelled.status, "cancelled");
+      await call(`sessions/${cancelled.id}/status`, {
+        token: owner,
+        method: "POST",
+        body: { status: "scheduled" },
+        expected: 409,
+      });
+      await call(`planning/closures/${saved.id}`, {
+        token: owner,
+        method: "DELETE",
+      });
+      assert.equal(
+        (
+          await call("sessions?from=2030-03-03&to=2030-03-04", { token: owner })
+        )[0].status,
+        "cancelled",
+      );
+      assert.equal(
+        (
+          await call(`planning/series/${one.id}/cancel`, {
+            token: teacher.token,
+            method: "POST",
+            body: {},
+          })
+        ).cancelled,
+        5,
+      );
+      assert.equal(
+        (
+          await call(`planning/series/${one.id}/cancel`, {
+            token: teacher.token,
+            method: "POST",
+            body: {},
+          })
+        ).cancelled,
+        0,
+      );
+      assert.equal(
+        (await call("planning/series", { token: teacher.token })).find(
+          (s) => s.id === one.id,
+        ).total,
+        6,
+      );
+      await call(`planning/series/${more.id}/cancel`, {
+        token: owner,
+        method: "POST",
+        body: {},
+      });
+      await call(`planning/closures/${closure}`, {
+        token: owner,
+        method: "DELETE",
+      });
+    },
+  );
+  await t.test(
     "Appel, notification sans doublon, justificatif parent et décision",
     async () => {
       await call(`sessions/${lessonId}/attendance`, {
@@ -729,6 +915,48 @@ test("Parcours métier réel, droits et isolation PostgreSQL", async (t) => {
       });
       assert.equal((await call("students", { token: other })).length, 0);
       assert.equal((await call("payments", { token: other })).length, 0);
+      const ownClosure = (
+        await call("planning/closures", {
+          token: owner,
+          method: "POST",
+          body: {
+            label: "Vacances privées",
+            from: "2031-07-01",
+            to: "2031-08-31",
+          },
+        })
+      ).id;
+      assert.deepEqual(await call("planning/closures", { token: other }), []);
+      assert.deepEqual(await call("planning/series", { token: other }), []);
+      await call(`planning/closures/${ownClosure}`, {
+        token: other,
+        method: "DELETE",
+        expected: 404,
+      });
+      const ownSeries = (await call("planning/series", { token: owner }))[0];
+      await call(`planning/series/${ownSeries.id}/cancel`, {
+        token: other,
+        method: "POST",
+        body: {},
+        expected: 404,
+      });
+      await call("planning/preview", {
+        token: other,
+        method: "POST",
+        body: {
+          group_id: groupId,
+          from: "2031-01-01",
+          to: "2031-02-01",
+          weekdays: [0],
+          start_time: "09:00",
+          duration_minutes: 60,
+        },
+        expected: 404,
+      });
+      await call(`planning/closures/${ownClosure}`, {
+        token: owner,
+        method: "DELETE",
+      });
       assert.deepEqual(
         await call("sessions?from=2025-05-12&to=2025-05-13", { token: other }),
         [],

@@ -32,6 +32,7 @@ type View = "week" | "month" | "day" | "list";
 type Props = {
   rows: Row[];
   groups: Row[];
+  closures: Row[];
   lang: "fr" | "ar";
   canEdit: boolean;
   busy: boolean;
@@ -59,6 +60,7 @@ const at = (day: string, minute: number) =>
 export default function PlanningCalendar({
   rows,
   groups,
+  closures,
   lang,
   canEdit,
   busy,
@@ -70,6 +72,8 @@ export default function PlanningCalendar({
   onRangeChange,
 }: Props) {
   const t = (fr: string, ar: string) => (lang === "fr" ? fr : ar);
+  const closedDay = (day: string) =>
+    closures.find((c) => c.from <= day && c.to >= day);
   const locale = lang === "fr" ? "fr-DZ" : "ar-DZ";
   const [now, setNow] = useState(new Date());
   const today = calendarDay(now);
@@ -439,6 +443,17 @@ export default function PlanningCalendar({
               )}
         </span>
       </div>
+      {closures
+        .filter((c) => c.from <= days.at(-1)! && c.to >= days[0])
+        .map((c) => (
+          <div className="cal-closure-banner" key={c.id}>
+            <Ban size={15} />
+            <strong>{c.label}</strong>
+            <span>
+              {c.from} → {c.to}
+            </span>
+          </div>
+        ))}
       {!rangeRows.length && !busy && (
         <div className="cal-empty" role="status">
           <SlidersHorizontal size={18} />
@@ -465,7 +480,7 @@ export default function PlanningCalendar({
             {days.map((day) => (
               <button
                 key={day}
-                className={`cal-day-heading ${day === today ? "today" : ""}`}
+                className={`cal-day-heading ${day === today ? "today" : ""} ${closedDay(day) ? "closed" : ""}`}
                 onClick={() => showDay(day)}
                 aria-label={fmt(day, {
                   weekday: "long",
@@ -476,7 +491,14 @@ export default function PlanningCalendar({
                 <span>{fmt(day, { weekday: "short" })}</span>
                 <strong>{fmt(day, { day: "numeric" })}</strong>
                 <small>
-                  {dayLayout(filtered as any, day).length} {t("cours", "دروس")}
+                  {closedDay(day) ? (
+                    t("Fermé", "مغلق")
+                  ) : (
+                    <>
+                      {dayLayout(filtered as any, day).length}{" "}
+                      {t("cours", "دروس")}
+                    </>
+                  )}
                 </small>
               </button>
             ))}
@@ -490,7 +512,7 @@ export default function PlanningCalendar({
             {days.map((day, i) => (
               <div
                 key={day}
-                className={`cal-day-column ${day === today ? "today" : ""}`}
+                className={`cal-day-column ${day === today ? "today" : ""} ${closedDay(day) ? "closed" : ""}`}
                 style={{ height }}
               >
                 {hoursGrid.flatMap((h) =>
@@ -498,6 +520,8 @@ export default function PlanningCalendar({
                     canEdit ? (
                       <button
                         key={`${h}-${m}`}
+                        disabled={!!closedDay(day)}
+                        title={closedDay(day)?.label}
                         className={`cal-slot ${m === 30 ? "half" : ""}`}
                         style={{ top: (h - firstHour) * 88 + (m / 60) * 88 }}
                         aria-label={`${t("Planifier le", "جدولة يوم")} ${fmt(day, { weekday: "long", day: "numeric", month: "long" })} ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`}
@@ -573,7 +597,7 @@ export default function PlanningCalendar({
             {days.map((day, i) => (
               <div
                 key={day}
-                className={`cal-month-day ${day.slice(0, 7) !== anchor.slice(0, 7) ? "outside" : ""} ${day === today ? "today" : ""}`}
+                className={`cal-month-day ${day.slice(0, 7) !== anchor.slice(0, 7) ? "outside" : ""} ${day === today ? "today" : ""} ${closedDay(day) ? "closed" : ""}`}
               >
                 <div className="cal-month-date">
                   <button
@@ -582,7 +606,7 @@ export default function PlanningCalendar({
                   >
                     {fmt(day, { day: "numeric" })}
                   </button>
-                  {canEdit && (
+                  {canEdit && !closedDay(day) && (
                     <button
                       className="cal-month-add"
                       aria-label={`${t("Planifier le", "جدولة يوم")} ${day}`}
@@ -592,6 +616,14 @@ export default function PlanningCalendar({
                     </button>
                   )}
                 </div>
+                {closedDay(day) && (
+                  <span
+                    className="cal-closed-label"
+                    title={closedDay(day)?.label}
+                  >
+                    {t("Fermé", "مغلق")} · {closedDay(day)?.label}
+                  </span>
+                )}
                 {layouts[i].slice(0, 3).map(({ row: r }) => (
                   <button
                     key={r.id}
@@ -774,6 +806,14 @@ export default function PlanningCalendar({
               </div>
             )}
           </div>
+          {selected.series_id && (
+            <div className="cal-detail-notes">
+              {t(
+                "Cette séance appartient à une série récurrente. Les modifications ici concernent uniquement cette séance.",
+                "هذه الحصة ضمن سلسلة متكررة. التعديل هنا يخص هذه الحصة فقط.",
+              )}
+            </div>
+          )}
           {selected.notes && (
             <div className="cal-detail-notes">
               <h3>{t("Notes de la séance", "ملاحظات الحصة")}</h3>

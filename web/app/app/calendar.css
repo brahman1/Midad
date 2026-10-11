@@ -6,6 +6,47 @@
   box-shadow: 0 8px 30px #172d5210;
   overflow: hidden;
 }
+.cal-closure-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 24px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff5e7;
+  color: #b58545;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.cal-day-heading.closed,
+.cal-month-day.closed {
+  background: #fffaf3;
+}
+.cal-day-heading.closed small {
+  color: #b17d38;
+}
+.cal-day-column.closed {
+  background: repeating-linear-gradient(
+    135deg,
+    #fffaf3,
+    #fffaf3 12px,
+    #fdf5e9 12px,
+    #fdf5e9 13px
+  );
+}
+.cal-slot:disabled {
+  cursor: not-allowed;
+  background: transparent;
+}
+.cal-closed-label {
+  display: block;
+  color: #b78c52;
+  font-size: 10px;
+  padding: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cal-intro {
   display: flex;
   justify-content: space-between;

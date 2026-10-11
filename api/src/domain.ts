@@ -39,6 +39,7 @@ import {
   hash,
 } from "./security";
 import { notify } from "./mail";
+import { planningRoute, ensureSchoolOpen } from "./planning";
 type DB = PoolClient | typeof db;
 async function record(
   c: DB,
@@ -223,6 +224,7 @@ export class DomainController {
       throw new ForbiddenException(
         "Vérifiez votre adresse email avant de modifier les données",
       );
+    if (p.startsWith("planning/")) return planningRoute(u, key, p, body);
     if (key === "GET dashboard") {
       const ss = await students(u),
         gg = await groups(u),
@@ -542,6 +544,7 @@ export class DomainController {
         const g = await group(c, u, v.group_id);
         if (method === "PATCH") await lesson(c, u, lid);
         const room = v.room || g.room;
+        await ensureSchoolOpen(c, u.tenant_id, v.starts_at, v.ends_at);
         const conflict = await c.query(
           `SELECT 1 FROM lessons l JOIN groups g ON g.id=l.group_id AND g.tenant_id=l.tenant_id WHERE l.tenant_id=$1 AND l.id<>$2 AND l.status<>'cancelled' AND l.starts_at<$4 AND l.ends_at>$3 AND ((l.room<>'' AND l.room=$5) OR (g.teacher_id IS NOT NULL AND g.teacher_id=$6) OR l.group_id=$7) LIMIT 1`,
           [
@@ -621,6 +624,7 @@ export class DomainController {
         if (v.status === "completed" && Date.parse(l.ends_at) > Date.now())
           throw new ConflictException("La séance n’est pas encore terminée");
         if (v.status === "scheduled") {
+          await ensureSchoolOpen(c, u.tenant_id, l.starts_at, l.ends_at);
           const g = await group(c, u, l.group_id);
           const clash = await c.query(
             "SELECT 1 FROM lessons x JOIN groups gx ON gx.id=x.group_id AND gx.tenant_id=x.tenant_id WHERE x.tenant_id=$1 AND x.id<>$2 AND x.status<>'cancelled' AND x.starts_at<$4 AND x.ends_at>$3 AND ((x.room<>'' AND x.room=$5) OR (gx.teacher_id IS NOT NULL AND gx.teacher_id=$6) OR x.group_id=$7)",
@@ -1459,6 +1463,8 @@ export class DomainController {
         "groups",
         "enrollments",
         "lessons",
+        "school_closures",
+        "lesson_series",
         "attendance",
         "invoices",
         "payments",
