@@ -31,3 +31,13 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - API : dates bornées à 62 jours, rejet des dates invalides et périodes inversées, historique/futur et isolation entre établissements vérifiés.
 - 22 tests réussis (18 existants avec assertions API ajoutées, 4 sur dates, mois, cours simultanés et séances traversant minuit). Builds API/shared/web réussis.
 - Captures du calendrier dans ce dossier ; archive des sources actualisée. Pas de modification du planning natif dans cette livraison.
+
+## GitHub et test Render gratuit — 11 octobre 2026
+
+- Dépôt https://github.com/brahman1/Midad : push de `main` réussi, fichiers privés et secrets exclus du commit.
+- Build shared/API/Next.js réussi ; 24 tests locaux réussis et formatage vérifié.
+- Render : build et démarrage réussis sur Linux, commit applicatif `a333cb6`. Web Node Free et PostgreSQL 17 Free à Francfort. Aucun moyen de paiement ajouté ; aucun plan payant sélectionné.
+- URL vérifiée : https://midad-test-brahman1.onrender.com ; connexion réelle dans le navigateur, tableau de bord renseigné, vues semaine/mois du calendrier.
+- Dix vérifications HTTPS, dont les six rôles : cookies sécurisés, refus anonyme/origine étrangère/ancien mot de passe, portée des élèves/séances et révocation après déconnexion. Rapport `render-smoke.json` sans mot de passe ni jeton.
+- 76 élèves fictifs, 10 groupes, 6 enseignants ; 53 séances du 11 au 17 octobre. Captures `render-calendrier.png` et `render-free-service.png`.
+- Base gratuite expirant le 10 novembre 2026. Emails cloud non configurés ; aucune publication mobile sur les stores ajoutée à cette validation.

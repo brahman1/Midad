@@ -1,0 +1,17 @@
+{
+  "url": "https://midad-test-brahman1.onrender.com",
+  "date": "2026-10-11T12:47:29.364Z",
+  "checks": [
+    "Santé API/PostgreSQL via HTTPS",
+    "Accès non connecté refusé",
+    "Origine étrangère refusée",
+    "Ancien mot de passe local refusé",
+    "OWNER: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés",
+    "PARENT: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés",
+    "TEACHER: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés",
+    "CASHIER: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés",
+    "STUDENT: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés",
+    "MANAGER: connexion, cookies sécurisés, tableau de bord, élèves et calendrier vérifiés"
+  ],
+  "realData": false
+}

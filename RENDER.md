@@ -1,5 +1,7 @@
 # Test gratuit sur Render
 
+Instance vérifiée le 11 octobre 2026 : https://midad-test-brahman1.onrender.com. Dépôt : https://github.com/brahman1/Midad. Le service web et PostgreSQL sont sur Free ; la base actuelle expire le 10 novembre 2026. Le mot de passe distinct est fourni à l'utilisateur séparément et reste absent de Git. Captures et rapport de vérification dans `verification/`.
+
 Le fichier `render.yaml` crée uniquement un service web Node gratuit (Next.js + API sur boucle locale) et une base PostgreSQL gratuite à Francfort. L'API conserve les cookies sécurisés HTTPS et les contrôles d'origine. Le site utilise `/api` sur le même domaine. Les migrations s'appliquent au démarrage.
 
 Créer un Blueprint depuis ce dépôt, choisir `main`, puis renseigner `MIDAD_DEMO_PASSWORD` avec un mot de passe de test distinct d'au moins 20 caractères. Aucun secret dans Git. Les jeux fictifs sont activés explicitement pour cette instance de test, sur une base dédiée, et initialisés une seule fois. Établissement : `midad-local`, direction : `direction@midad.test` ; autres rôles identiques au test local.
