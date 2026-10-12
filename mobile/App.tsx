@@ -698,6 +698,13 @@ function Midad() {
               submit={(v) =>
                 void action(async () => {
                   const r = await api("auth/login", "POST", v);
+                  if (r.mfa_required)
+                    throw new Error(
+                      t(
+                        "Saisissez un nouveau code de double authentification ou de secours.",
+                        "أدخل رمز مصادقة ثنائية جديدًا أو رمز استرداد.",
+                      ),
+                    );
                   await setSession(r.token);
                   const u = await api("auth/me");
                   setUser(u);
@@ -1407,6 +1414,13 @@ function Midad() {
                         undefined,
                         { secure: true },
                       ),
+                      field(
+                        "code",
+                        "Code de double authentification (si activée)",
+                        "رمز المصادقة الثنائية (عند التفعيل)",
+                        undefined,
+                        { optional: true },
+                      ),
                     ],
                     (v) => api("auth/password", "POST", v),
                   ),
@@ -1415,6 +1429,11 @@ function Midad() {
               {button(
                 t("Ouvrir la gestion web", "فتح إدارة الويب"),
                 () => void Linking.openURL(`${WEBSITE}/app`),
+                true,
+              )}
+              {button(
+                t("Sécurité & confidentialité", "الأمان والخصوصية"),
+                () => void Linking.openURL(`${WEBSITE}/app?view=security`),
                 true,
               )}
               {button(
@@ -1437,6 +1456,13 @@ function Midad() {
                           { secure: true },
                         ),
                         field(
+                          "code",
+                          "Code de double authentification (si activée)",
+                          "رمز المصادقة الثنائية (عند التفعيل)",
+                          undefined,
+                          { optional: true },
+                        ),
+                        field(
                           "confirm",
                           "Saisissez SUPPRIMER",
                           "اكتب SUPPRIMER",
@@ -1449,6 +1475,7 @@ function Midad() {
                           );
                         await api("auth/delete-account", "POST", {
                           password: v.password,
+                          code: v.code || undefined,
                         });
                         await setSession("");
                         setUser(null);
@@ -1728,7 +1755,8 @@ function Login({
 }) {
   const [slug, setSlug] = useState(""),
     [email, setEmail] = useState(""),
-    [password, setPassword] = useState("");
+    [password, setPassword] = useState(""),
+    [code, setCode] = useState("");
   return (
     <View style={{ marginTop: 28 }}>
       {[
@@ -1740,6 +1768,14 @@ function Login({
         ],
         [ar ? "البريد الإلكتروني" : "Email", email, setEmail, false],
         [ar ? "كلمة المرور" : "Mot de passe", password, setPassword, true],
+        [
+          ar
+            ? "رمز المصادقة الثنائية (عند التفعيل)"
+            : "Code de double authentification (si activée)",
+          code,
+          setCode,
+          false,
+        ],
       ].map(([label, value, change, secure]) => (
         <View key={label as string}>
           <Text style={s.label}>{label as string}</Text>
@@ -1760,7 +1796,9 @@ function Login({
       <Pressable
         disabled={busy || !slug || !email || !password}
         style={[s.button, busy && s.disabled]}
-        onPress={() => submit({ slug, email, password })}
+        onPress={() =>
+          submit({ slug, email, password, ...(code ? { code } : {}) })
+        }
       >
         <Text style={s.buttonText}>
           {busy ? (ar ? "لحظة…" : "Un instant…") : ar ? "دخول" : "Se connecter"}

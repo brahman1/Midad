@@ -28,6 +28,8 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM:?Configure SMTP_FROM}
       CONTACT_EMAIL: ${CONTACT_EMAIL:?Configure CONTACT_EMAIL}
+      SECURITY_ENCRYPTION_KEY: ${SECURITY_ENCRYPTION_KEY:?Configure SECURITY_ENCRYPTION_KEY}
+      REQUIRE_ADMIN_MFA: "true"
     depends_on:
       db: {condition: service_healthy}
     networks: [private, outgoing]

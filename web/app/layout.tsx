@@ -11,13 +11,19 @@ import "@fontsource/noto-sans-arabic/400.css";
 import "@fontsource/noto-sans-arabic/600.css";
 import type { Metadata } from "next";
 import "./globals.css";
+import { connection } from "next/server";
 export const metadata: Metadata = {
   icons: { icon: "/logo.svg" },
   title: "Midad · Votre centre, en toute clarté",
   description:
     "Gestion des centres éducatifs : inscriptions, présences, échéances et communication avec les familles. Français et arabe.",
 };
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  await connection();
   return (
     <html lang="fr" data-scroll-behavior="smooth">
       <body>{children}</body>

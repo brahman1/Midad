@@ -17,6 +17,7 @@ Stack retenue : TypeScript, Next.js, NestJS, PostgreSQL et Expo/React Native. Le
 - Annonces ciblées, notifications, documents protégés, journal administratif et export des données.
 - Site commercial et formulaire de contact enregistré en base ; interfaces responsive, arabe de droite à gauche, dinars et heures d'Alger.
 - Tableau de bord avec indicateurs, encaissements des sept derniers jours, prochaines séances, échéances et reçus ; données calculées par l'API selon les droits du compte.
+- Sécurité & confidentialité : sessions et révocation, double authentification TOTP, journal des accès, export personnel et demandes de droits. CSP avec nonce et limitations persistantes côté serveur. Préparation légale et limites dans **SECURITE-CONFORMITE.md** ; registre à compléter dans **REGISTRE-TRAITEMENTS.csv**.
 
 La démonstration locale comprend 77 élèves, 10 groupes et 6 enseignants fictifs, avec inscriptions, présences, factures, règlements et planning. `npm run demo` crée et enrichit cet établissement de test ; les captures de la refonte sont dans `verification/refonte-*.jpg`.
 

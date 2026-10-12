@@ -34,6 +34,13 @@ import {
 } from "./security";
 import { emailJob } from "./mail";
 import { PoolClient } from "pg";
+import {
+  enforceRate,
+  deviceLabel,
+  securityEvent,
+  verifyFactor,
+  confirmPassword,
+} from "./protection";
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -41,11 +48,20 @@ const cookieOptions = () => ({
   path: "/api",
   maxAge: 7 * 86400000,
 });
-async function issueSession(c: PoolClient, userId: string, res: Response) {
+export async function issueSession(
+  c: PoolClient,
+  userId: string,
+  res: Response,
+  req: Request,
+) {
   const raw = token();
   await c.query(
-    "INSERT INTO auth_sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '7 days')",
-    [hash(raw), userId],
+    "INSERT INTO auth_sessions(token_hash,user_id,expires_at,device_label) VALUES($1,$2,now()+interval '7 days',$3)",
+    [hash(raw), userId, deviceLabel(req)],
+  );
+  await c.query(
+    "DELETE FROM auth_sessions WHERE user_id=$1 AND token_hash IN(SELECT token_hash FROM auth_sessions WHERE user_id=$1 ORDER BY created_at DESC OFFSET 10)",
+    [userId],
   );
   res.cookie("midad_session", raw, cookieOptions());
   return raw;
@@ -83,8 +99,13 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    checkOrigin(req);
-    const v = parse(registration, body);
+    checkOrigin(req, true);
+    const v = parse(
+      registration.extend({
+        session_mode: z.enum(["cookie", "token"]).default("token"),
+      }),
+      body,
+    );
     const encrypted = await bcryptHash(v.password, 12);
     return transaction(async (c) => {
       const tid = uid(),
@@ -102,8 +123,16 @@ export class AuthController {
         { id: userId, email: v.email, name: v.name },
         "verify",
       );
+      const raw = await issueSession(c, userId, res, req);
+      await securityEvent(
+        { id: userId, tenant_id: tid },
+        "auth.register",
+        "",
+        "success",
+        c,
+      );
       return {
-        token: await issueSession(c, userId, res),
+        ...(v.session_mode === "token" ? { token: raw } : {}),
         verification_required: true,
       };
     });
@@ -113,8 +142,15 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    checkOrigin(req);
-    const v = parse(login, body);
+    checkOrigin(req, true);
+    const v = parse(
+      login.extend({
+        session_mode: z.enum(["cookie", "token"]).default("token"),
+        code: z.string().max(24).optional(),
+      }),
+      body,
+    );
+    await enforceRate("login-account:" + v.slug + ":" + v.email, 12);
     const r = await db.query(
       "SELECT u.* FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE t.slug=$1 AND u.email=$2 AND u.active",
       [v.slug, v.email],
@@ -123,11 +159,27 @@ export class AuthController {
     const fallback =
       "$2b$12$hpmRlboBUdpwNGxgAMUjoODNzHFvscGGybPwwISihEGvcWIgJohVi";
     const valid = await compare(v.password, u?.password_hash ?? fallback);
-    if (!u || !valid)
+    if (!u || !valid) {
+      await securityEvent(u ?? null, "auth.login", "", "failure");
       throw new UnauthorizedException("Identifiants incorrects");
-    return transaction(async (c) => ({
-      token: await issueSession(c, u.id, res),
-    }));
+    }
+    return transaction(async (c) => {
+      const locked = (
+        await c.query(
+          "SELECT password_hash,active FROM users WHERE id=$1 FOR UPDATE",
+          [u.id],
+        )
+      ).rows[0];
+      if (!locked?.active || locked.password_hash !== u.password_hash)
+        throw new UnauthorizedException("Identifiants incorrects");
+      if (!(await verifyFactor(c, u.id, v.code))) {
+        await securityEvent(u, "auth.mfa.login", "", "failure", c);
+        return { mfa_required: true };
+      }
+      const raw = await issueSession(c, u.id, res, req);
+      await securityEvent(u, "auth.login", "", "success", c);
+      return v.session_mode === "token" ? { token: raw } : { ok: true };
+    });
   }
   @UseGuards(AuthGuard) @Get("me") me(@Req() req: AuthRequest) {
     return req.user;
@@ -139,6 +191,7 @@ export class AuthController {
     await db.query("DELETE FROM auth_sessions WHERE token_hash=$1", [
       req.sessionHash,
     ]);
+    await securityEvent(req.user, "auth.logout", "");
     res.clearCookie("midad_session", { path: "/api" });
     return { ok: true };
   }
@@ -148,7 +201,7 @@ export class AuthController {
     return { ok: true };
   }
   @Post("forgot") async forgot(@Body() body: unknown, @Req() req: Request) {
-    checkOrigin(req);
+    checkOrigin(req, true);
     const v = parse(z.object({ slug: z.string().max(40), email }), body);
     const r = await db.query(
       "SELECT u.* FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE t.slug=$1 AND u.email=$2 AND u.active",
@@ -158,7 +211,7 @@ export class AuthController {
     return { ok: true };
   }
   @Post("consume") async consume(@Body() body: unknown, @Req() req: Request) {
-    checkOrigin(req);
+    checkOrigin(req, true);
     const v = parse(
       z.object({
         token: z.string().min(20).max(100),
@@ -196,13 +249,25 @@ export class AuthController {
     @Body() body: unknown,
     @Req() req: AuthRequest,
   ) {
-    const v = parse(z.object({ current: z.string().max(128), password }), body);
+    const v = parse(
+      z.object({
+        current: z.string().max(128),
+        password,
+        code: z.string().max(24).optional(),
+      }),
+      body,
+    );
+    await enforceRate("password:" + req.user.id, 10);
     const r = await db.query("SELECT password_hash FROM users WHERE id=$1", [
       req.user.id,
     ]);
     if (!(await compare(v.current, r.rows[0].password_hash)))
       throw new UnauthorizedException("Mot de passe incorrect");
     await transaction(async (c) => {
+      if (!(await verifyFactor(c, req.user.id, v.code)))
+        throw new UnauthorizedException(
+          "Code de double authentification requis ou incorrect",
+        );
       await c.query("UPDATE users SET password_hash=$1 WHERE id=$2", [
         await bcryptHash(v.password, 12),
         req.user.id,
@@ -211,6 +276,12 @@ export class AuthController {
         "DELETE FROM auth_sessions WHERE user_id=$1 AND token_hash<>$2",
         [req.user.id, req.sessionHash],
       );
+      await c.query("DELETE FROM auth_tokens WHERE user_id=$1", [req.user.id]);
+      await c.query(
+        "UPDATE auth_sessions SET reauthenticated_at=now() WHERE token_hash=$1",
+        [req.sessionHash],
+      );
+      await securityEvent(req.user, "auth.password.change", "", "success", c);
     });
     return { ok: true };
   }
@@ -269,7 +340,14 @@ export class AuthController {
     @Req() req: AuthRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const v = parse(z.object({ password: z.string().max(128) }), body);
+    const v = parse(
+      z.object({
+        password: z.string().max(128),
+        code: z.string().max(24).optional(),
+      }),
+      body,
+    );
+    await enforceRate("delete-account:" + req.user.id, 5);
     const r = await db.query("SELECT password_hash FROM users WHERE id=$1", [
       req.user.id,
     ]);
@@ -280,6 +358,10 @@ export class AuthController {
         "Transférez la propriété de votre établissement à un autre responsable avant de supprimer ce compte.",
       );
     await transaction(async (c) => {
+      if (!(await verifyFactor(c, req.user.id, v.code)))
+        throw new UnauthorizedException(
+          "Code de double authentification requis ou incorrect",
+        );
       await c.query(
         "UPDATE users SET active=false,name='Compte supprimé',email=$1,password_hash=$2 WHERE id=$3",
         [
@@ -298,6 +380,16 @@ export class AuthController {
       await c.query("DELETE FROM notifications WHERE user_id=$1", [
         req.user.id,
       ]);
+      await c.query("DELETE FROM user_mfa WHERE user_id=$1", [req.user.id]);
+      await c.query(
+        "UPDATE students SET parent_id=NULL WHERE tenant_id=$1 AND parent_id=$2",
+        [req.user.tenant_id, req.user.id],
+      );
+      await c.query(
+        "UPDATE students SET user_id=NULL WHERE tenant_id=$1 AND user_id=$2",
+        [req.user.tenant_id, req.user.id],
+      );
+      await securityEvent(req.user, "auth.account.delete", "", "success", c);
     });
     res.clearCookie("midad_session", { path: "/api" });
     return { ok: true };

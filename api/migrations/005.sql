@@ -1,0 +1,17 @@
+ALTER TABLE auth_sessions ADD COLUMN id uuid NOT NULL DEFAULT gen_random_uuid();
+ALTER TABLE auth_sessions ADD CONSTRAINT auth_sessions_id_key UNIQUE(id);
+ALTER TABLE auth_sessions ADD COLUMN last_seen_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE auth_sessions ADD COLUMN reauthenticated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE auth_sessions ADD COLUMN device_label text NOT NULL DEFAULT 'Appareil';
+CREATE INDEX auth_sessions_user ON auth_sessions(user_id,expires_at);
+CREATE TABLE rate_buckets(key_hash text PRIMARY KEY,hits integer NOT NULL,expires_at timestamptz NOT NULL);
+CREATE INDEX rate_buckets_expiry ON rate_buckets(expires_at);
+CREATE TABLE security_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),tenant_id uuid REFERENCES tenants(id),user_id uuid REFERENCES users(id),action text NOT NULL,resource text NOT NULL DEFAULT '',outcome text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX security_events_tenant_date ON security_events(tenant_id,created_at);
+CREATE TABLE user_mfa(user_id uuid PRIMARY KEY REFERENCES users(id),secret_encrypted text NOT NULL,enabled boolean NOT NULL DEFAULT false,pending_until timestamptz NOT NULL DEFAULT now()+interval '10 minutes',last_counter bigint NOT NULL DEFAULT -1,recovery_hashes text[] NOT NULL DEFAULT '{}');
+CREATE TABLE privacy_requests(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),tenant_id uuid NOT NULL REFERENCES tenants(id),user_id uuid NOT NULL REFERENCES users(id),kind text NOT NULL CHECK(kind IN('access','rectification','erasure','restriction','objection','portability')),message text NOT NULL,status text NOT NULL DEFAULT 'open' CHECK(status IN('open','in_progress','completed','refused')),response text NOT NULL DEFAULT '',created_at timestamptz NOT NULL DEFAULT now(),due_at timestamptz NOT NULL DEFAULT now()+interval '1 month',updated_at timestamptz NOT NULL DEFAULT now(),resolved_by uuid REFERENCES users(id));
+CREATE INDEX privacy_requests_tenant ON privacy_requests(tenant_id,created_at);
+ALTER TABLE tenants ADD COLUMN privacy_contact text NOT NULL DEFAULT '';
+ALTER TABLE tenants ADD COLUMN retention_policy text NOT NULL DEFAULT '';
+ALTER TABLE tenants ADD COLUMN processing_basis text NOT NULL DEFAULT '';
+ALTER TABLE tenants ADD COLUMN dpo_name text NOT NULL DEFAULT '';

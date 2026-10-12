@@ -26,7 +26,13 @@ export async function notify(
   );
   await c.query(
     `INSERT INTO outbox(id,channel,recipient,payload) SELECT gen_random_uuid(),'push',token,$2::jsonb FROM device_tokens WHERE user_id=$1`,
-    [user, JSON.stringify({ title, body })],
+    [
+      user,
+      JSON.stringify({
+        title: "Midad",
+        body: "Une nouvelle information est disponible dans votre espace sécurisé. / معلومة جديدة متاحة في مساحتك الآمنة.",
+      }),
+    ],
   );
 }
 export async function deliver() {
@@ -84,7 +90,10 @@ export async function deliver() {
       if (!r.ok || data.data?.status === "error")
         throw new Error("Push non distribué");
     }
-    await db.query("UPDATE outbox SET state='sent' WHERE id=$1", [job.id]);
+    await db.query(
+      "UPDATE outbox SET state='sent',recipient='',payload='{}'::jsonb WHERE id=$1",
+      [job.id],
+    );
   } catch {
     await db.query(
       "UPDATE outbox SET state=CASE WHEN attempts>=5 THEN 'failed' ELSE 'pending' END,next_at=now()+interval '2 minutes' WHERE id=$1",

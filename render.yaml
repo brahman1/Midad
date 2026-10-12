@@ -28,6 +28,8 @@ services:
         value: "true"
       - key: MIDAD_DEMO_PASSWORD
         sync: false
+      - key: SECURITY_ENCRYPTION_KEY
+        generateValue: true
 databases:
   - name: midad-test-db
     plan: free

@@ -59,3 +59,14 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - Lien présenté comme bouton permanent ; seuls les liens secondaires et la création d'établissement dans l'en-tête sont masqués sur les petits écrans. L'en-tête peut passer sur deux lignes pour les écrans les plus étroits.
 - Build Next.js/TypeScript et formatage des fichiers modifiés réussis. Visibilité et disposition vérifiées dans le navigateur à 390 et 320 pixels en français et arabe ; clic sur le bouton arabe ouvrant le formulaire de connexion vérifié.
 - Render gratuit : déploiement `3dd68de` réussi en 1 min 51 s. Bouton visible sur la version en ligne à 390 pixels et navigation vers le formulaire de connexion vérifiée ; capture `render-mobile-connexion.png`.
+
+## Couche de sécurité et protection des données — 12 octobre 2026
+
+- Migration 005, limitations atomiques PostgreSQL, expiration/révocation des sessions, confirmation récente, anti-CSRF renforcé, journal sans contenu des dossiers ni secret ; accès enseignant minimisé et fichiers avec extension/encodage contrôlés.
+- Double authentification TOTP et codes de secours à usage unique, secret chiffré AES-256-GCM et rotation des sessions à l'activation/désactivation. Configuration de production Docker exigeant MFA pour les comptes privilégiés ; option facultative sur le service de démonstration.
+- CSP avec nonce neuf appliqué aux scripts Next.js, pages dynamiques et API sans cache, en-têtes anti-iframe/nosniff/referrer/HSTS. Secrets des liens d'authentification retirés de la barre d'adresse après lecture.
+- Écran français/arabe avec sessions, export personnel, demandes de droits et gestion par la direction. Notice Brainfor/contact@brainfor.fr, registre à compléter et conditions de conformité dans SECURITE-CONFORMITE.md. Aucune certification ni déclaration à une autorité réalisée.
+- Suite complète : **40 tests réussis, zéro échec**, sur API/PostgreSQL réel et HTTP Next.js. Contrôles TypeScript des quatre workspaces, builds shared/API/web et formatage vérifiés.
+- Audit npm production API/web/shared : zéro vulnérabilité signalée. Deux avis non corrigés dans l'outillage mobile (braces/node-forge, propagés à 15 entrées), détail et mesures de limitation dans SECURITE-CONFORMITE.md.
+- Bundles Expo Android/iOS/web actualisés ; APK Android local recompilé en 59 s, 602 tâches Gradle. Signature de développement et configuration locale conservées, aucun nouvel essai natif sur appareil.
+- Interface ordinateur et téléphone à 390 pixels en arabe inspectée sans débordement de page. Capture security-mobile-ar.png. Aucune MFA activée sur le compte partagé de démonstration.

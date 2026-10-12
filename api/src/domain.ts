@@ -40,6 +40,7 @@ import {
 } from "./security";
 import { notify } from "./mail";
 import { planningRoute, ensureSchoolOpen } from "./planning";
+import { requireRecent, enforceRate } from "./protection";
 type DB = PoolClient | typeof db;
 async function record(
   c: DB,
@@ -50,7 +51,41 @@ async function record(
 ) {
   await c.query(
     "INSERT INTO audit(id,tenant_id,user_id,action,entity_id,detail) VALUES($1,$2,$3,$4,$5,$6)",
-    [uid(), u.tenant_id, u.id, action, entity, JSON.stringify(detail)],
+    [
+      uid(),
+      u.tenant_id,
+      u.id,
+      action,
+      entity,
+      JSON.stringify(
+        detail && typeof detail === "object"
+          ? Object.fromEntries(
+              Object.entries(detail).filter(([k]) =>
+                [
+                  "active",
+                  "status",
+                  "kind",
+                  "amount_centimes",
+                  "group_id",
+                  "student_id",
+                  "teacher_id",
+                  "parent_id",
+                  "user_id",
+                  "month",
+                  "day",
+                  "due_date",
+                  "pay_mode",
+                  "pay_value",
+                  "capacity",
+                  "starts_at",
+                  "ends_at",
+                  "cancelled",
+                ].includes(k),
+              ),
+            )
+          : {},
+      ),
+    ],
   );
 }
 function scope(
@@ -124,7 +159,7 @@ async function students(u: User) {
   const s = studentScope(u, "s", 2);
   return (
     await db.query(
-      `SELECT s.*,p.name AS parent_name,p.email AS parent_email FROM students s LEFT JOIN users p ON p.id=s.parent_id AND p.tenant_id=s.tenant_id WHERE s.tenant_id=$1 AND s.active ${s.sql} ORDER BY s.name LIMIT 2000`,
+      `SELECT ${u.role === "TEACHER" ? "s.id,s.name,s.level,s.active,s.created_at" : "s.*,p.name AS parent_name,p.email AS parent_email"} FROM students s LEFT JOIN users p ON p.id=s.parent_id AND p.tenant_id=s.tenant_id WHERE s.tenant_id=$1 AND s.active ${s.sql} ORDER BY s.name LIMIT 2000`,
       [u.tenant_id, ...s.args],
     )
   ).rows;
@@ -464,7 +499,7 @@ export class DomainController {
       const s = studentScope(u, "s", 3);
       return (
         await db.query(
-          `SELECT s.* FROM enrollments e JOIN students s ON s.id=e.student_id AND s.tenant_id=e.tenant_id WHERE e.tenant_id=$1 AND e.group_id=$2 AND s.active ${s.sql} ORDER BY s.name`,
+          `SELECT ${u.role === "TEACHER" ? "s.id,s.name,s.level,s.active,s.created_at" : "s.*"} FROM enrollments e JOIN students s ON s.id=e.student_id AND s.tenant_id=e.tenant_id WHERE e.tenant_id=$1 AND e.group_id=$2 AND s.active ${s.sql} ORDER BY s.name`,
           [u.tenant_id, gid, ...s.args],
         )
       ).rows;
@@ -1208,6 +1243,7 @@ export class DomainController {
     }
     if (key === "POST ownership") {
       permit(u, ["OWNER"]);
+      await requireRecent(req);
       const v = parse(z.object({ user_id: id }), body);
       return transaction(async (c) => {
         await c.query("SELECT id FROM tenants WHERE id=$1 FOR UPDATE", [
@@ -1332,7 +1368,7 @@ export class DomainController {
         z.object({
           group_id: id,
           title: name,
-          filename: z.string().regex(/^[^/\\\x00]{1,120}$/),
+          filename: z.string().regex(/^[^/\\\x00-\x1f\x7f]{1,120}$/),
           mime: z.enum([
             "application/pdf",
             "image/png",
@@ -1344,6 +1380,22 @@ export class DomainController {
         body,
       );
       const bytes = Buffer.from(v.base64, "base64");
+      if (
+        !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+          v.base64,
+        )
+      )
+        throw new BadRequestException("Encodage du fichier invalide");
+      const extensions: Record<string, RegExp> = {
+        "application/pdf": /\.pdf$/i,
+        "image/png": /\.png$/i,
+        "image/jpeg": /\.jpe?g$/i,
+        "text/plain": /\.txt$/i,
+      };
+      if (!extensions[v.mime].test(v.filename))
+        throw new BadRequestException(
+          "Extension du fichier incompatible avec son format",
+        );
       if (!bytes.length || bytes.length > 5_000_000)
         throw new BadRequestException("Fichier limité à 5 Mo");
       if (
@@ -1452,6 +1504,8 @@ export class DomainController {
     }
     if (key === "GET export") {
       permit(u, adminRoles);
+      await requireRecent(req);
+      await enforceRate("tenant-export:" + u.id, 5, 3600);
       const data: Record<string, unknown> = {
         school: (
           await db.query("SELECT * FROM tenants WHERE id=$1", [u.tenant_id])

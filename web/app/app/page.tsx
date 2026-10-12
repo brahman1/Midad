@@ -11,6 +11,7 @@ import Link from "next/link";
 import Overview from "./overview";
 import PlanningCalendar from "./calendar";
 import RecurringPlanning from "./recurrence";
+import SecurityCenter from "./security-center";
 import "./workspace.css";
 import {
   LayoutDashboard,
@@ -40,13 +41,17 @@ import {
   User,
   adminRoles,
   financeRoles,
-  labels,
+  labels as baseLabels,
   dinars,
   calendarWeek,
   shiftDay,
 } from "@midad/shared";
 import { api, cents, localDate, API } from "../../lib/api";
 type Row = Record<string, any>;
+const labels: Record<string, { fr: string; ar: string }> = {
+  ...baseLabels,
+  security: { fr: "Sécurité & confidentialité", ar: "الأمان والخصوصية" },
+};
 type Field = {
   key: string;
   fr: string;
@@ -75,6 +80,7 @@ const icons: Record<string, typeof Users> = {
   users: Shield,
   audit: History,
   settings: Settings,
+  security: Shield,
 };
 const strings: Record<string, [string, string]> = {
   OWNER: ["Propriétaire", "المالك"],
@@ -173,6 +179,11 @@ export default function Workspace() {
   }, []);
   async function load() {
     if (!user) return;
+    if (page === "security") {
+      setLoading(false);
+      setError("");
+      return;
+    }
     const seq = ++request.current;
     setLoading(true);
     setError("");
@@ -797,11 +808,19 @@ export default function Workspace() {
           true,
           "password",
         ),
+        text(
+          "code",
+          "Code de double authentification (si activée)",
+          "رمز المصادقة الثنائية (عند التفعيل)",
+          undefined,
+          false,
+        ),
       ],
       (f) =>
         api("auth/password", "POST", {
           current: value(f, "current"),
           password: value(f, "password"),
+          code: value(f, "code") || undefined,
         }),
     );
   }
@@ -817,10 +836,18 @@ export default function Workspace() {
           true,
           "password",
         ),
+        text(
+          "code",
+          "Code de double authentification (si activée)",
+          "رمز المصادقة الثنائية (عند التفعيل)",
+          undefined,
+          false,
+        ),
       ],
       async (f) => {
         await api("auth/delete-account", "POST", {
           password: value(f, "password"),
+          code: value(f, "code") || undefined,
         });
         location.href = "/";
       },
@@ -1141,6 +1168,9 @@ export default function Workspace() {
             </div>
           ) : (
             <>
+              {page === "security" && (
+                <SecurityCenter user={user} lang={lang} />
+              )}
               {page === "dashboard" && (
                 <Overview
                   data={dashboard}

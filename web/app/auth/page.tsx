@@ -15,6 +15,14 @@ export default function Auth() {
     const q = new URLSearchParams(location.search);
     setMode(q.get("mode") ?? "login");
     setRawToken(q.get("token") ?? "");
+    if (q.has("token")) {
+      q.delete("token");
+      history.replaceState(
+        history.state,
+        "",
+        location.pathname + (q.size ? "?" + q.toString() : ""),
+      );
+    }
   }, []);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,14 +40,25 @@ export default function Auth() {
         await api("auth/forgot", "POST", data);
         setDone(true);
       } else {
-        await api(
+        const result = await api(
           `auth/${mode === "register" ? "register" : "login"}`,
           "POST",
           {
             ...data,
+            session_mode: "cookie",
             ...(mode === "register" ? { locale: ar ? "ar" : "fr" } : {}),
           },
         );
+        if (result.mfa_required) {
+          setMfaRequired(true);
+          setError(
+            t(
+              "Saisissez un code de votre application d’authentification ou un code de secours.",
+              "أدخل رمز تطبيق المصادقة أو رمز الاسترداد.",
+            ),
+          );
+          return;
+        }
         location.href = "/app";
       }
     } catch (e) {
@@ -48,6 +67,7 @@ export default function Auth() {
       setBusy(false);
     }
   }
+  const [mfaRequired, setMfaRequired] = useState(false);
   return (
     <main className="auth-page" dir={ar ? "rtl" : "ltr"}>
       <aside className="auth-story">
@@ -198,6 +218,26 @@ export default function Auth() {
                     "قرأت الشروط وسياسة الخصوصية.",
                   )}{" "}
                   <Link href="/legal">{t("Lire", "اقرأ")}</Link>
+                </label>
+              )}
+              {mode === "login" && mfaRequired && (
+                <label>
+                  {t(
+                    "Code de double authentification ou de secours",
+                    "رمز المصادقة الثنائية أو الاسترداد",
+                  )}
+                  <input
+                    name="code"
+                    autoComplete="one-time-code"
+                    required
+                    maxLength={24}
+                  />
+                  <small>
+                    {t(
+                      "Utilisez un nouveau code. Un code de secours ne peut servir qu’une fois.",
+                      "استخدم رمزًا جديدًا. رمز الاسترداد صالح مرة واحدة.",
+                    )}
+                  </small>
                 </label>
               )}
               {error && (

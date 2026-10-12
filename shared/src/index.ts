@@ -16,7 +16,19 @@ export const email = z
   .max(254)
   .transform((v) => v.toLowerCase().trim());
 export const name = z.string().trim().min(2).max(120);
-export const password = z.string().min(12).max(128);
+export const password = z
+  .string()
+  .min(12)
+  .max(128)
+  .refine((v) => new TextEncoder().encode(v).length <= 72, "72 octets maximum")
+  .refine(
+    (v) =>
+      new Set(v.toLowerCase()).size >= 5 &&
+      (v.length >= 20 ||
+        [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z0-9]/].filter((r) => r.test(v))
+          .length >= 3),
+    "Utilisez 12 caractères avec trois types de caractères, ou une phrase de 20 caractères",
+  );
 export const id = z.uuid();
 export const money = z.number().int().min(1).max(100_000_000_000);
 export const day = z
