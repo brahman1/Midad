@@ -1,7 +1,7 @@
 {
   "url": "https://midad-test-brahman1.onrender.com",
-  "date": "2026-10-12T12:44:21.302Z",
-  "commit": "180527d",
+  "date": "2026-10-12T12:52:04.091Z",
+  "commit": "9561f99",
   "result": "OK",
   "checks": [
     "HTTPS : CSP à nonce renouvelé, scripts balisés, HSTS, anti-iframe et absence de cache",
