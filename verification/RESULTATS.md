@@ -58,3 +58,4 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - Cause reproduite : le lien de connexion était masqué par la règle CSS des liens de navigation sous 900 pixels.
 - Lien présenté comme bouton permanent ; seuls les liens secondaires et la création d'établissement dans l'en-tête sont masqués sur les petits écrans. L'en-tête peut passer sur deux lignes pour les écrans les plus étroits.
 - Build Next.js/TypeScript et formatage des fichiers modifiés réussis. Visibilité et disposition vérifiées dans le navigateur à 390 et 320 pixels en français et arabe ; clic sur le bouton arabe ouvrant le formulaire de connexion vérifié.
+- Render gratuit : déploiement `3dd68de` réussi en 1 min 51 s. Bouton visible sur la version en ligne à 390 pixels et navigation vers le formulaire de connexion vérifiée ; capture `render-mobile-connexion.png`.
