@@ -1,0 +1,17 @@
+{
+  "url": "https://midad-test-brahman1.onrender.com",
+  "date": "2026-10-12T12:44:21.302Z",
+  "commit": "180527d",
+  "result": "OK",
+  "checks": [
+    "HTTPS : CSP à nonce renouvelé, scripts balisés, HSTS, anti-iframe et absence de cache",
+    "Notice Brainfor et contact publiés",
+    "OWNER: connexion cookie sans jeton JSON, écran sécurité et clé MFA disponible",
+    "Professeur : coordonnées familiales et dates de naissance absentes des listes",
+    "TEACHER: connexion cookie sans jeton JSON, écran sécurité et clé MFA disponible",
+    "Parent : export personnel lié, refus de gestion et journal administratif",
+    "PARENT: connexion cookie sans jeton JSON, écran sécurité et clé MFA disponible"
+  ],
+  "mfaEnabledOnDemo": false,
+  "mutations": "Sessions de test créées puis révoquées ; aucun dossier ou réglage MFA modifié"
+}
