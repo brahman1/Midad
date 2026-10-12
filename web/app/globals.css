@@ -1773,11 +1773,28 @@ td .actions {
 @media (max-width: 600px) {
   .public-nav {
     padding: 20px 6%;
+    gap: 12px;
+    flex-wrap: wrap;
   }
   .nav-links {
-    gap: 13px;
+    gap: 8px;
+    margin-inline-start: auto;
   }
-  .nav-links .button {
+  .nav-links .button:not(.public-login) {
+    display: none;
+  }
+  .nav-links .public-login {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .public-nav .text-button {
+    min-height: 44px;
+    padding: 6px;
+    gap: 6px;
+  }
+  .public-nav .brand-ar {
     display: none;
   }
   .brand {

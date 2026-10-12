@@ -52,3 +52,9 @@ Ces résultats locaux ne constituent pas un engagement de capacité ni un audit 
 - Interface de création dans le web responsive ; aucune nouvelle compilation des applications natives pour cette fonction.
 - Création réelle de quatre séances depuis le formulaire local, puis arrêt confirmé de la série : quatre séances conservées, zéro séance à venir.
 - Déploiement Render gratuit réussi en 1 min 58 s, commit applicatif `aeff6f6`. Migration et nouveaux endpoints vérifiés par HTTPS pour direction, professeur et parent ; aperçu en ligne conforme à l'exemple. Rapport `render-recurrence-smoke.json`, capture `render-recurrence.png`. Aucun cours ni fermeture ajouté sur Render pendant cette vérification.
+
+## Connexion depuis le site sur téléphone — 12 octobre 2026
+
+- Cause reproduite : le lien de connexion était masqué par la règle CSS des liens de navigation sous 900 pixels.
+- Lien présenté comme bouton permanent ; seuls les liens secondaires et la création d'établissement dans l'en-tête sont masqués sur les petits écrans. L'en-tête peut passer sur deux lignes pour les écrans les plus étroits.
+- Build Next.js/TypeScript et formatage des fichiers modifiés réussis. Visibilité et disposition vérifiées dans le navigateur à 390 et 320 pixels en français et arabe ; clic sur le bouton arabe ouvrant le formulaire de connexion vérifié.

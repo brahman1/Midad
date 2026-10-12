@@ -47,7 +47,9 @@ export default function Home() {
             <Languages size={17} />
             {ar ? "Français" : "العربية"}
           </button>
-          <Link href="/auth">{t("Connexion", "دخول")}</Link>
+          <Link href="/auth" className="button outline public-login">
+            {t("Connexion", "دخول")}
+          </Link>
           <Link href="/auth?mode=register" className="button dark">
             {t("Ouvrir mon espace", "إنشاء حساب")}
             <ArrowUpRight size={16} />
